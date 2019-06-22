@@ -1,0 +1,12 @@
+apply plugin: "java"
+
+sourceCompatibility = 1.8
+
+archivesBaseName = "KuangBianXiaoHaiLuo-Bukkit"
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+    options.compilerArgs << "-Xlint:all" // << "-Werror"
+}
+
+// TODO

@@ -1,0 +1,27 @@
+apply plugin: "java"
+
+sourceCompatibility = 1.8
+
+archivesBaseName = "KuangBianXiaoHaiLuo-Sponge"
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "sponge"
+        url = "https://repo.spongepowered.org/maven"
+    }
+    maven {
+        name = "bstats"
+        url = "http://repo.bstats.org/content/repositories/releases"
+    }
+}
+
+dependencies {
+    compile "org.bstats:bstats-sponge:1.2"
+    compile "org.spongepowered:spongeapi:7.2.0-SNAPSHOT"
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+    options.compilerArgs << "-Xlint:all" // << "-Werror"
+}
