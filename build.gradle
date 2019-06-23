@@ -4,14 +4,13 @@ version = "1.0.0-SNAPSHOT"
 
 defaultTasks "clean", "build"
 
-jar {
-    enabled = false
-}
+jar.enabled = false
 
 subprojects {
     version = rootProject.version
     plugins.withId("java") {
-        buildDir = rootProject.buildDir
+        buildDir = file("${rootProject.buildDir}/${project.name}")
+        jar.destinationDir = rootProject.jar.destinationDir
         sourceSets {
             main.java.srcDir project.file("src/")
             main.resources.srcDir rootProject.file("KBXHLResources/")
