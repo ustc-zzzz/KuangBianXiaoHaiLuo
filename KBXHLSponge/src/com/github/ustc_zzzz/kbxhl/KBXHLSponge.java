@@ -32,6 +32,7 @@ public class KBXHLSponge
     final Logger logger;
     final ConfigurationLoader<CommentedConfigurationNode> loader;
     final KBXHLSpongeCommand command = new KBXHLSpongeCommand(this);
+    final KBXHLSpongeStructure structure = new KBXHLSpongeStructure(this);
     final KBXHLSpongeConfiguration configuration = new KBXHLSpongeConfiguration(this);
 
     @Inject
@@ -45,6 +46,7 @@ public class KBXHLSponge
     public void on(GameStartingServerEvent event)
     {
         this.command.init();
+        this.structure.init();
         this.configuration.init();
     }
 

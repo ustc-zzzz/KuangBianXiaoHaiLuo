@@ -1,5 +1,6 @@
 package com.github.ustc_zzzz.kbxhl;
 
+import com.flowpowered.math.vector.Vector3i;
 import com.github.ustc_zzzz.kbxhl.event.KBXHLEvent;
 import com.google.common.reflect.TypeToken;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -13,24 +14,28 @@ import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.DataView;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.persistence.DataFormats;
-import org.spongepowered.api.data.type.HandTypes;
+import org.spongepowered.api.effect.particle.ParticleEffect;
+import org.spongepowered.api.effect.particle.ParticleTypes;
+import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.living.golem.Shulker;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.EventManager;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.cause.entity.damage.source.EntityDamageSource;
+import org.spongepowered.api.event.entity.AttackEntityEvent;
+import org.spongepowered.api.event.entity.MoveEntityEvent;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.item.inventory.AffectSlotEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.item.inventory.Carrier;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.Slot;
 import org.spongepowered.api.item.inventory.entity.Hotbar;
 import org.spongepowered.api.item.inventory.entity.PlayerInventory;
-import org.spongepowered.api.item.inventory.equipment.EquipmentTypes;
-import org.spongepowered.api.item.inventory.property.EquipmentSlotType;
 import org.spongepowered.api.item.inventory.property.SlotIndex;
-import org.spongepowered.api.item.inventory.type.CarriedInventory;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
@@ -40,6 +45,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * @author ustc_zzzz
@@ -112,6 +118,41 @@ public class KBXHLSpongeConfiguration
         }
 
         @Listener
+        public void on(MoveEntityEvent event)
+        {
+            if (config.playerInventories.containsKey(event.getTargetEntity().getUniqueId()))
+            {
+                event.setToTransform(event.getToTransform().setLocation(event.getFromTransform().getLocation()));
+            }
+        }
+
+        @Listener
+        public void on(InteractBlockEvent event, @First Player player)
+        {
+            if (config.playerInventories.containsKey(player.getUniqueId()))
+            {
+                event.setCancelled(true);
+                Vector3i offset = event.getTargetBlock().getPosition().sub(player.getPosition().toInt());
+                Task.builder().execute(task -> plugin.structure.repairFor(player, offset)).submit(plugin);
+            }
+        }
+
+        @Listener
+        public void on(AttackEntityEvent event, @First EntityDamageSource source)
+        {
+            Entity entity = event.getTargetEntity();
+            if (entity instanceof Shulker && source.getSource() instanceof Player)
+            {
+                if (entity.get(Keys.DISPLAY_NAME).filter(KBXHLSpongeStructure.SHULKER_NAME::equals).isPresent())
+                {
+                    ParticleEffect effect = ParticleEffect.builder().type(ParticleTypes.FIREWORKS_SPARK).build();
+                    entity.getWorld().spawnParticles(effect, entity.getLocation().getPosition());
+                    entity.remove();
+                }
+            }
+        }
+
+        @Listener
         public void on(KBXHLEvent.Start event, @Root Player player)
         {
             UUID uuid = player.getUniqueId();
@@ -127,6 +168,7 @@ public class KBXHLSpongeConfiguration
                 try (ByteArrayOutputStream output = new ByteArrayOutputStream())
                 {
                     DataFormats.NBT.writeTo(output, data);
+
                     Hotbar hotbar = inventory.getHotbar();
                     hotbar.set(SlotIndex.of(0), disabledItem);
                     hotbar.set(SlotIndex.of(1), disabledItem);
@@ -138,7 +180,23 @@ public class KBXHLSpongeConfiguration
                     hotbar.set(SlotIndex.of(7), disabledItem);
                     hotbar.set(SlotIndex.of(8), disabledItem);
                     hotbar.setSelectedSlotIndex(1 + 1 + 1 + 1);
+
+                    Stack<Vector3i> stack = new Stack<>();
+                    plugin.structure.constructFor(player, stack);
                     config.playerInventories.put(uuid, encoder.encodeToString(output.toByteArray()));
+
+                    Consumer<Task> consumer = task ->
+                    {
+                        if (config.playerInventories.containsKey(uuid))
+                        {
+                            plugin.structure.summonFor(player, 64, stack);
+                        }
+                        else
+                        {
+                            task.cancel();
+                        }
+                    };
+                    Task.builder().intervalTicks(16).execute(consumer).submit(plugin);
                 }
                 catch (IOException e)
                 {
@@ -152,6 +210,9 @@ public class KBXHLSpongeConfiguration
         public void on(KBXHLEvent.Stop event, @Root Player player)
         {
             String value = config.playerInventories.remove(player.getUniqueId());
+
+            plugin.structure.destructFor(player);
+
             if (Objects.nonNull(value))
             {
                 DataContainer data;
