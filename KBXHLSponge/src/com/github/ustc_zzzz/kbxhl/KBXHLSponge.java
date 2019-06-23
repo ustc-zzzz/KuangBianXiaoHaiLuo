@@ -1,7 +1,9 @@
 package com.github.ustc_zzzz.kbxhl;
 
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
-import org.spongepowered.api.Sponge;
+import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
@@ -27,21 +29,23 @@ public class KBXHLSponge
     private static final Pattern CHAT_PATTERN_1 = Pattern.compile("\u6d77\u87ba[\uff01\u0021]\u005c\u005c\u0073\u002a");
     private static final Pattern CHAT_PATTERN_2 = Pattern.compile("\u571f\u7403[\uff01\u0021]\u005c\u005c\u0073\u002a");
 
-    private final Logger logger;
-    private final KBXHLSpongeCommand command;
+    final Logger logger;
+    final ConfigurationLoader<CommentedConfigurationNode> loader;
+    final KBXHLSpongeCommand command = new KBXHLSpongeCommand(this);
+    final KBXHLSpongeConfiguration configuration = new KBXHLSpongeConfiguration(this);
 
     @Inject
-    public KBXHLSponge(Logger logger)
+    public KBXHLSponge(Logger logger, @DefaultConfig(sharedRoot = true) ConfigurationLoader<CommentedConfigurationNode> loader)
     {
         this.logger = logger;
-        this.command = new KBXHLSpongeCommand(this);
+        this.loader = loader;
     }
 
     @Listener
     public void on(GameStartingServerEvent event)
     {
-        this.logger.info("Register command for KuangBianXiaoHaiLuo");
-        Sponge.getCommandManager().register(this, this.command.get(), "kbxhl");
+        this.command.init();
+        this.configuration.init();
     }
 
     @Listener(order = Order.LATE, beforeModifications = true)
