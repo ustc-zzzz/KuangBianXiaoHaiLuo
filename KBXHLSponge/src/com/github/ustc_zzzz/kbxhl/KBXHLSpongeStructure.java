@@ -6,22 +6,24 @@ import com.google.common.collect.ImmutableList;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.data.DataContainer;
+import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.DyeColors;
+import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.EntitySnapshot;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.golem.Shulker;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 import org.spongepowered.api.world.World;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-import java.util.Stack;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
@@ -42,6 +44,8 @@ public class KBXHLSpongeStructure
     private BlockState endBricks = BlockSnapshot.NONE.getState();
     private BlockState purpurBlock = BlockSnapshot.NONE.getState();
     private BlockState purpleGlass = BlockSnapshot.NONE.getState();
+
+    private EnumMap<Direction, Byte> directionMap = new EnumMap<>(Direction.class);
 
     KBXHLSpongeStructure(KBXHLSponge plugin)
     {
@@ -77,6 +81,10 @@ public class KBXHLSpongeStructure
             }
         }
         this.plugin = plugin;
+        this.directionMap.put(Direction.WEST, (byte) 5);
+        this.directionMap.put(Direction.EAST, (byte) 4);
+        this.directionMap.put(Direction.NORTH, (byte) 3);
+        this.directionMap.put(Direction.SOUTH, (byte) 2);
         this.positionForEndBricks = builderForEndBricks.build();
         this.positionForPurpurBlock = builderForPurpurBlock.build();
         this.positionForPurpleGlass = builderForPurpleGlass.build();
@@ -119,6 +127,14 @@ public class KBXHLSpongeStructure
         {
             player.resetBlockChange(baseVector.add(offset));
         }
+
+        for (Entity entity : player.getWorld().getNearbyEntities(baseVector.toDouble(), 5))
+        {
+            if (entity instanceof Shulker && entity.getCreator().filter(player.getUniqueId()::equals).isPresent())
+            {
+                entity.remove();
+            }
+        }
     }
 
     public void constructFor(Player player, Stack<Vector3i> stack)
@@ -143,6 +159,7 @@ public class KBXHLSpongeStructure
         player.setRotation(Vector3d.ZERO);
     }
 
+    @SuppressWarnings("deprecation")
     public void summonFor(Player player, int duringTicks, Stack<Vector3i> stack)
     {
         if (!stack.empty())
@@ -150,24 +167,37 @@ public class KBXHLSpongeStructure
             Collections.shuffle(stack, this.random);
 
             World world = player.getWorld();
-            Vector3i offset = stack.pop();
-            Vector3d position = player.getPosition().add(offset.toDouble());
-            Shulker shulker = (Shulker) world.createEntity(EntityTypes.SHULKER, position);
+            Vector3i offsetInt = stack.pop();
+            Vector3d offset = offsetInt.toDouble();
+            Vector3d position = player.getPosition().add(offset);
 
             Vector3i positionInt = position.toInt();
-            shulker.offer(Keys.AI_ENABLED, Boolean.FALSE);
-            shulker.offer(Keys.DISPLAY_NAME, SHULKER_NAME);
-            shulker.offer(Keys.DIRECTION, Direction.getClosest(position, Direction.Division.CARDINAL).getOpposite());
+            Direction direction = Direction.getClosest(offset, Direction.Division.CARDINAL);
+            DataContainer data = world.createEntity(EntityTypes.SHULKER, position).createSnapshot().toContainer();
+
+            data.set(DataQuery.of("UnsafeData", "NoAI"), (byte) 1);
+            data.set(DataQuery.of("UnsafeData", "AttachFace"), this.directionMap.get(direction));
+            data.set(DataQuery.of("UnsafeData", "CustomName"), TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME));
+
+            Entity shulker = EntitySnapshot.builder().build(data).flatMap(EntitySnapshot::restore).get();
 
             Consumer<Task> executor = task ->
             {
-                shulker.remove();
-                stack.push(offset);
-                player.sendBlockChange(positionInt, BlockTypes.PURPUR_BLOCK.getDefaultState());
+                if (shulker.isRemoved())
+                {
+                    stack.push(offsetInt);
+                    player.resetBlockChange(positionInt);
+                }
+                else
+                {
+                    shulker.remove();
+                    stack.push(offsetInt);
+                    player.sendBlockChange(positionInt, this.purpurBlock);
+                }
             };
 
-            world.spawnEntity(shulker);
             player.resetBlockChange(positionInt);
+            shulker.setCreator(player.getUniqueId());
             Task.builder().delayTicks(duringTicks).execute(executor).submit(this.plugin);
         }
     }

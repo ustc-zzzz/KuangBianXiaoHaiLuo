@@ -143,11 +143,11 @@ public class KBXHLSpongeConfiguration
             Entity entity = event.getTargetEntity();
             if (entity instanceof Shulker && source.getSource() instanceof Player)
             {
-                if (entity.get(Keys.DISPLAY_NAME).filter(KBXHLSpongeStructure.SHULKER_NAME::equals).isPresent())
+                if (entity.getCreator().filter(source.getSource().getUniqueId()::equals).isPresent())
                 {
                     ParticleEffect effect = ParticleEffect.builder().type(ParticleTypes.FIREWORKS_SPARK).build();
                     entity.getWorld().spawnParticles(effect, entity.getLocation().getPosition());
-                    entity.remove();
+                    entity.offer(Keys.INVISIBLE, Boolean.TRUE);
                 }
             }
         }
