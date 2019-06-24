@@ -10,6 +10,8 @@ import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.DyeColors;
+import org.spongepowered.api.effect.particle.ParticleEffect;
+import org.spongepowered.api.effect.particle.ParticleTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntitySnapshot;
 import org.spongepowered.api.entity.EntityTypes;
@@ -98,6 +100,38 @@ public class KBXHLSpongeStructure
         this.endBricks = BlockTypes.END_BRICKS.getDefaultState();
         this.purpurBlock = BlockTypes.PURPUR_BLOCK.getDefaultState();
         this.purpleGlass = BlockTypes.STAINED_GLASS.getDefaultState().with(Keys.DYE_COLOR, DyeColors.PURPLE).get();
+    }
+
+    public int scoreFor(Player player, Shulker entity)
+    {
+        if (entity.getCreator().filter(player.getUniqueId()::equals).isPresent())
+        {
+            if (!entity.get(Keys.INVISIBLE).orElse(Boolean.TRUE))
+            {
+                ParticleEffect effect = ParticleEffect.builder().type(ParticleTypes.FIREWORKS_SPARK).build();
+                entity.getWorld().spawnParticles(effect, entity.getLocation().getPosition());
+                entity.offer(Keys.INVISIBLE, Boolean.TRUE);
+
+                Text text = entity.get(Keys.DISPLAY_NAME).orElse(Text.of());
+                if (text.equals(SHULKER_NAME_N))
+                {
+                    return 1;
+                }
+                if (text.equals(SHULKER_NAME_R))
+                {
+                    return 5;
+                }
+                if (text.equals(SHULKER_NAME_SR))
+                {
+                    return 25;
+                }
+                if (text.equals(SHULKER_NAME_SSR))
+                {
+                    return 125;
+                }
+            }
+        }
+        return 0;
     }
 
     public void repairFor(Player player, Vector3i offset)
