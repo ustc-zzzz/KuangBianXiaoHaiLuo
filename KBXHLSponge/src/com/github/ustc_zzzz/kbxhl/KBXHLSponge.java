@@ -33,6 +33,7 @@ public class KBXHLSponge
     final ConfigurationLoader<CommentedConfigurationNode> loader;
     final KBXHLSpongeCommand command = new KBXHLSpongeCommand(this);
     final KBXHLSpongeStructure structure = new KBXHLSpongeStructure(this);
+    final KBXHLSpongeScoreManager scoreManager = new KBXHLSpongeScoreManager(this);
     final KBXHLSpongeConfiguration configuration = new KBXHLSpongeConfiguration(this);
 
     @Inject
@@ -47,6 +48,7 @@ public class KBXHLSponge
     {
         this.command.init();
         this.structure.init();
+        this.scoreManager.init();
         this.configuration.init();
     }
 

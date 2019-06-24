@@ -9,7 +9,6 @@ import ninja.leaping.configurate.objectmapping.Setting;
 import ninja.leaping.configurate.objectmapping.serialize.ConfigSerializable;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.boss.ServerBossBar;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.DataView;
@@ -44,6 +43,7 @@ import org.spongepowered.api.util.annotation.NonnullByDefault;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -196,7 +196,11 @@ public class KBXHLSpongeConfiguration
             if (targetEntity instanceof Shulker && sourceEntity instanceof Player)
             {
                 Player player = (Player) sourceEntity;
-                player.sendMessage(Text.of("=> ", plugin.structure.scoreFor(player, ((Shulker) targetEntity))));
+                int score = plugin.structure.scoreFor(player, ((Shulker) targetEntity));
+                if (plugin.scoreManager.add(player, score) >= KBXHLSpongeScoreManager.MAX_SCORE)
+                {
+                    plugin.command.stop(player);
+                }
             }
         }
 
@@ -207,6 +211,8 @@ public class KBXHLSpongeConfiguration
             Hotbar hotbar = ((PlayerInventory) inventory).getHotbar();
 
             insertInventory(player, inventory);
+
+            plugin.scoreManager.add(player, 0);
 
             hotbar.setSelectedSlotIndex(4);
             hotbar.set(SlotIndex.of(0), disabledItem);
@@ -240,6 +246,15 @@ public class KBXHLSpongeConfiguration
         public void on(KBXHLEvent.Stop event, @Root Player player)
         {
             plugin.structure.destructFor(player);
+            boolean succeed = plugin.scoreManager.add(player, 0) >= KBXHLSpongeScoreManager.MAX_SCORE;
+
+            Duration d = plugin.scoreManager.remove(player);
+            if (succeed)
+            {
+                int seconds = Math.toIntExact(d.getSeconds()), milliseconds = d.getNano() / 1_000_000;
+                player.sendMessage(Text.of("=> ", String.format("%d.%03d", seconds, milliseconds), " seconds"));
+            }
+
             removeInventory(player);
         }
 
