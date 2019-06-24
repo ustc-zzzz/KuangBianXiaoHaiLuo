@@ -32,7 +32,10 @@ import java.util.function.Consumer;
 @NonnullByDefault
 public class KBXHLSpongeStructure
 {
-    static final Text SHULKER_NAME = Text.of(TextColors.GOLD, "海螺");
+    private static final Text SHULKER_NAME_N = Text.of(TextColors.GOLD, "普通海螺");
+    private static final Text SHULKER_NAME_R = Text.of(TextColors.GOLD, "稀有海螺");
+    private static final Text SHULKER_NAME_SR = Text.of(TextColors.GOLD, "超级稀有海螺");
+    private static final Text SHULKER_NAME_SSR = Text.of(TextColors.GOLD, "特级稀有海螺");
 
     private final Random random = new Random();
 
@@ -160,7 +163,7 @@ public class KBXHLSpongeStructure
     }
 
     @SuppressWarnings("deprecation")
-    public void summonFor(Player player, int duringTicks, Stack<Vector3i> stack)
+    public void summonFor(Player player, Stack<Vector3i> stack)
     {
         if (!stack.empty())
         {
@@ -177,7 +180,48 @@ public class KBXHLSpongeStructure
 
             data.set(DataQuery.of("UnsafeData", "NoAI"), (byte) 1);
             data.set(DataQuery.of("UnsafeData", "AttachFace"), this.directionMap.get(direction));
-            data.set(DataQuery.of("UnsafeData", "CustomName"), TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME));
+
+            int duringTicks = 0;
+
+            for (int i = this.random.nextInt(64); i >= 0; i = this.random.nextInt(64))
+            {
+                i -= 36;
+                if (i < 0)
+                {
+                    String customName = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_N);
+                    data.set(DataQuery.of("UnsafeData", "Color"), (byte) 10); // purple (N)
+                    data.set(DataQuery.of("UnsafeData", "CustomName"), customName);
+                    duringTicks = 54;
+                    break;
+                }
+                i -= 18;
+                if (i < 0)
+                {
+                    String customName = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_R);
+                    data.set(DataQuery.of("UnsafeData", "Color"), (byte) 6); // pink (R)
+                    data.set(DataQuery.of("UnsafeData", "CustomName"), customName);
+                    duringTicks = 90;
+                    break;
+                }
+                i -= 6;
+                if (i < 0)
+                {
+                    String customName = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_SR);
+                    data.set(DataQuery.of("UnsafeData", "Color"), (byte) 1); // orange (SR)
+                    data.set(DataQuery.of("UnsafeData", "CustomName"), customName);
+                    duringTicks = 102;
+                    break;
+                }
+                i -= 3;
+                if (i < 0)
+                {
+                    String customName = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_SSR);
+                    data.set(DataQuery.of("UnsafeData", "Color"), (byte) 4); // yellow (SSR)
+                    data.set(DataQuery.of("UnsafeData", "CustomName"), customName);
+                    duringTicks = 108;
+                    break;
+                }
+            }
 
             Entity shulker = EntitySnapshot.builder().build(data).flatMap(EntitySnapshot::restore).get();
 

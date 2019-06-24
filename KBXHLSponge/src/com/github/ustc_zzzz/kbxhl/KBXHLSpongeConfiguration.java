@@ -189,14 +189,14 @@ public class KBXHLSpongeConfiguration
                     {
                         if (config.playerInventories.containsKey(uuid))
                         {
-                            plugin.structure.summonFor(player, 64, stack);
+                            plugin.structure.summonFor(player, stack);
                         }
                         else
                         {
                             task.cancel();
                         }
                     };
-                    Task.builder().intervalTicks(16).execute(consumer).submit(plugin);
+                    Task.builder().intervalTicks(18).execute(consumer).submit(plugin);
                 }
                 catch (IOException e)
                 {
