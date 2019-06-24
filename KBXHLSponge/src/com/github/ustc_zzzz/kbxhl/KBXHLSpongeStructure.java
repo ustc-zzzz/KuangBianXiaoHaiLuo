@@ -23,6 +23,7 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
+import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.*;
@@ -34,11 +35,6 @@ import java.util.function.Consumer;
 @NonnullByDefault
 public class KBXHLSpongeStructure
 {
-    private static final Text SHULKER_NAME_N = Text.of(TextColors.GOLD, "普通海螺");
-    private static final Text SHULKER_NAME_R = Text.of(TextColors.GOLD, "稀有海螺");
-    private static final Text SHULKER_NAME_SR = Text.of(TextColors.GOLD, "超级稀有海螺");
-    private static final Text SHULKER_NAME_SSR = Text.of(TextColors.GOLD, "特级稀有海螺");
-
     private final Random random = new Random();
 
     private final KBXHLSponge plugin;
@@ -86,10 +82,6 @@ public class KBXHLSpongeStructure
             }
         }
         this.plugin = plugin;
-        this.directionMap.put(Direction.WEST, (byte) 5);
-        this.directionMap.put(Direction.EAST, (byte) 4);
-        this.directionMap.put(Direction.NORTH, (byte) 3);
-        this.directionMap.put(Direction.SOUTH, (byte) 2);
         this.positionForEndBricks = builderForEndBricks.build();
         this.positionForPurpurBlock = builderForPurpurBlock.build();
         this.positionForPurpleGlass = builderForPurpleGlass.build();
@@ -111,24 +103,7 @@ public class KBXHLSpongeStructure
                 ParticleEffect effect = ParticleEffect.builder().type(ParticleTypes.FIREWORKS_SPARK).build();
                 entity.getWorld().spawnParticles(effect, entity.getLocation().getPosition());
                 entity.offer(Keys.INVISIBLE, Boolean.TRUE);
-
-                Text text = entity.get(Keys.DISPLAY_NAME).orElse(Text.of());
-                if (text.equals(SHULKER_NAME_N))
-                {
-                    return 1;
-                }
-                if (text.equals(SHULKER_NAME_R))
-                {
-                    return 5;
-                }
-                if (text.equals(SHULKER_NAME_SR))
-                {
-                    return 25;
-                }
-                if (text.equals(SHULKER_NAME_SSR))
-                {
-                    return 125;
-                }
+                return ShulkerIterator.getScore(entity);
             }
         }
         return 0;
@@ -174,10 +149,11 @@ public class KBXHLSpongeStructure
         }
     }
 
-    public void constructFor(Player player, Stack<Vector3i> stack)
+    public ShulkerIterator constructFor(Player player)
     {
-        Vector3i baseVector = player.getPosition().toInt();
-        stack.addAll(this.positionForPurpurBlock);
+        Location<World> location = player.getLocation();
+        Vector3i baseVector = location.getBlockPosition();
+        ShulkerIterator iterator = new ShulkerIterator(location, this.positionForPurpurBlock);
 
         for (Vector3i offset : this.positionForEndBricks)
         {
@@ -194,89 +170,172 @@ public class KBXHLSpongeStructure
 
         player.setLocation(baseVector.toDouble().add(0.5, 0, 0.5), player.getWorld().getUniqueId());
         player.setRotation(Vector3d.ZERO);
+        return iterator;
     }
 
-    @SuppressWarnings("deprecation")
-    public void summonFor(Player player, Stack<Vector3i> stack)
+    public void summonFor(Player player, ShulkerIterator iterator)
     {
-        if (!stack.empty())
+        Optional<Shulker> shulkerOptional = iterator.next();
+        if (shulkerOptional.isPresent())
         {
-            Collections.shuffle(stack, this.random);
-
-            World world = player.getWorld();
-            Vector3i offsetInt = stack.pop();
-            Vector3d offset = offsetInt.toDouble();
-            Vector3d position = player.getPosition().add(offset);
-
-            Vector3i positionInt = position.toInt();
-            Direction direction = Direction.getClosestHorizontal(offset, Direction.Division.CARDINAL);
-            DataContainer data = world.createEntity(EntityTypes.SHULKER, position).createSnapshot().toContainer();
-
-            data.set(DataQuery.of("UnsafeData", "NoAI"), (byte) 1);
-            data.set(DataQuery.of("UnsafeData", "AttachFace"), this.directionMap.get(direction));
-
-            int duringTicks = 0;
-
-            for (int i = this.random.nextInt(64); i >= 0; i = this.random.nextInt(64))
-            {
-                i -= 36;
-                if (i < 0)
-                {
-                    String customName = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_N);
-                    data.set(DataQuery.of("UnsafeData", "Color"), (byte) 10); // purple (N)
-                    data.set(DataQuery.of("UnsafeData", "CustomName"), customName);
-                    duringTicks = 54;
-                    break;
-                }
-                i -= 18;
-                if (i < 0)
-                {
-                    String customName = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_R);
-                    data.set(DataQuery.of("UnsafeData", "Color"), (byte) 6); // pink (R)
-                    data.set(DataQuery.of("UnsafeData", "CustomName"), customName);
-                    duringTicks = 90;
-                    break;
-                }
-                i -= 6;
-                if (i < 0)
-                {
-                    String customName = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_SR);
-                    data.set(DataQuery.of("UnsafeData", "Color"), (byte) 1); // orange (SR)
-                    data.set(DataQuery.of("UnsafeData", "CustomName"), customName);
-                    duringTicks = 102;
-                    break;
-                }
-                i -= 3;
-                if (i < 0)
-                {
-                    String customName = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_SSR);
-                    data.set(DataQuery.of("UnsafeData", "Color"), (byte) 4); // yellow (SSR)
-                    data.set(DataQuery.of("UnsafeData", "CustomName"), customName);
-                    duringTicks = 108;
-                    break;
-                }
-            }
-
-            Entity shulker = EntitySnapshot.builder().build(data).flatMap(EntitySnapshot::restore).get();
+            Shulker shulker = shulkerOptional.get();
+            int duringTicks = ShulkerIterator.getDuringTicks(shulker);
 
             Consumer<Task> executor = task ->
             {
                 if (shulker.isRemoved())
                 {
-                    stack.push(offsetInt);
-                    player.resetBlockChange(positionInt);
+                    player.resetBlockChange(shulker.getLocation().getBlockPosition());
                 }
                 else
                 {
                     shulker.remove();
-                    stack.push(offsetInt);
-                    player.sendBlockChange(positionInt, this.purpurBlock);
+                    player.sendBlockChange(shulker.getLocation().getBlockPosition(), this.purpurBlock);
                 }
             };
-
-            player.resetBlockChange(positionInt);
-            shulker.setCreator(player.getUniqueId());
             Task.builder().delayTicks(duringTicks).execute(executor).submit(this.plugin);
+
+            player.resetBlockChange(shulker.getLocation().getBlockPosition());
+            shulker.setCreator(player.getUniqueId());
+        }
+    }
+
+    public static class ShulkerIterator implements Iterator<Optional<Shulker>>
+    {
+        private static final Text SHULKER_NAME_SSR = Text.of(TextColors.GOLD, "特级稀有海螺");
+        private static final Text SHULKER_NAME_SR = Text.of(TextColors.GOLD, "超级稀有海螺");
+        private static final Text SHULKER_NAME_R = Text.of(TextColors.GOLD, "稀有海螺");
+        private static final Text SHULKER_NAME_N = Text.of(TextColors.GOLD, "普通海螺");
+
+        private static final EnumMap<Direction, Byte> DIRECTION_MAP = new EnumMap<>(Direction.class);
+        private static final String SHUKLER_LEVEL_SEQ = "NDCDBDCDNDCDADCDNDCDBDCD";
+        private static final Random RANDOM = new Random();
+
+        static
+        {
+            DIRECTION_MAP.put(Direction.SOUTH, (byte) 2);
+            DIRECTION_MAP.put(Direction.NORTH, (byte) 3);
+            DIRECTION_MAP.put(Direction.EAST, (byte) 4);
+            DIRECTION_MAP.put(Direction.WEST, (byte) 5);
+        }
+
+        private ArrayList<Vector3i> offsets;
+        private final Location<World> base;
+        private int pointer = -1;
+
+        private ShulkerIterator(Location<World> base, Collection<? extends Vector3i> offsets)
+        {
+            this.base = base;
+            this.offsets = new ArrayList<>(offsets);
+            Collections.shuffle(this.offsets, RANDOM);
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return true;
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public Optional<Shulker> next()
+        {
+            int maxPointer = SHUKLER_LEVEL_SEQ.length();
+            if (++this.pointer >= maxPointer)
+            {
+                int size = this.offsets.size(), beforeSize = size - maxPointer;
+
+                List<Vector3i> after = this.offsets.subList(beforeSize, size);
+                List<Vector3i> before = this.offsets.subList(0, beforeSize);
+
+                this.offsets = new ArrayList<>(after);
+                Collections.shuffle(this.offsets);
+
+                this.offsets.addAll(before);
+                this.pointer %= maxPointer;
+            }
+
+            Vector3d offset = this.offsets.get(this.pointer).toDouble();
+            Vector3d position = this.base.getPosition().add(offset);
+            World world = this.base.getExtent();
+
+            DataContainer data = world.createEntity(EntityTypes.SHULKER, position).createSnapshot().toContainer();
+            Direction direction = Direction.getClosestHorizontal(offset, Direction.Division.CARDINAL);
+
+            data.set(DataQuery.of("UnsafeData", "AttachFace"), DIRECTION_MAP.get(direction));
+            data.set(DataQuery.of("UnsafeData", "NoAI"), (byte) 1);
+
+            switch (SHUKLER_LEVEL_SEQ.charAt(this.pointer))
+            {
+            case 'D':
+                String customNameD = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_N);
+                data.set(DataQuery.of("UnsafeData", "Color"), (byte) 10); // purple (N)
+                data.set(DataQuery.of("UnsafeData", "CustomName"), customNameD);
+                break;
+            case 'C':
+                String customNameC = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_R);
+                data.set(DataQuery.of("UnsafeData", "Color"), (byte) 6); // pink (R)
+                data.set(DataQuery.of("UnsafeData", "CustomName"), customNameC);
+                break;
+            case 'B':
+                String customNameB = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_SR);
+                data.set(DataQuery.of("UnsafeData", "Color"), (byte) 1); // orange (SR)
+                data.set(DataQuery.of("UnsafeData", "CustomName"), customNameB);
+                break;
+            case 'A':
+                String customNameA = TextSerializers.LEGACY_FORMATTING_CODE.serialize(SHULKER_NAME_SSR);
+                data.set(DataQuery.of("UnsafeData", "Color"), (byte) 4); // yellow (SSR)
+                data.set(DataQuery.of("UnsafeData", "CustomName"), customNameA);
+                break;
+            default:
+                return Optional.empty();
+            }
+
+            return EntitySnapshot.builder().build(data).flatMap(EntitySnapshot::restore).map(Shulker.class::cast);
+        }
+
+        static int getDuringTicks(Shulker shulker)
+        {
+            Text text = shulker.get(Keys.DISPLAY_NAME).orElse(Text.of());
+            if (text.equals(SHULKER_NAME_N))
+            {
+                return 54;
+            }
+            if (text.equals(SHULKER_NAME_R))
+            {
+                return 90;
+            }
+            if (text.equals(SHULKER_NAME_SR))
+            {
+                return 102;
+            }
+            if (text.equals(SHULKER_NAME_SSR))
+            {
+                return 108;
+            }
+            return 0;
+        }
+
+        private static int getScore(Shulker shulker)
+        {
+            Text text = shulker.get(Keys.DISPLAY_NAME).orElse(Text.of());
+            if (text.equals(SHULKER_NAME_N))
+            {
+                return 1;
+            }
+            if (text.equals(SHULKER_NAME_R))
+            {
+                return 5;
+            }
+            if (text.equals(SHULKER_NAME_SR))
+            {
+                return 25;
+            }
+            if (text.equals(SHULKER_NAME_SSR))
+            {
+                return 125;
+            }
+            return 0;
         }
     }
 }

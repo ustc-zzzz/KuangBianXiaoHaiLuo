@@ -225,14 +225,13 @@ public class KBXHLSpongeConfiguration
             hotbar.set(SlotIndex.of(7), disabledItem);
             hotbar.set(SlotIndex.of(8), disabledItem);
 
-            Stack<Vector3i> stack = new Stack<>();
-            plugin.structure.constructFor(player, stack);
+            KBXHLSpongeStructure.ShulkerIterator iterator = plugin.structure.constructFor(player);
 
             Consumer<Task> consumer = task ->
             {
                 if (plugin.command.has(player))
                 {
-                    plugin.structure.summonFor(player, stack);
+                    plugin.structure.summonFor(player, iterator);
                 }
                 else
                 {
