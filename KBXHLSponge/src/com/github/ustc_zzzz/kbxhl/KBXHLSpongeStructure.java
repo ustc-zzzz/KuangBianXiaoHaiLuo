@@ -209,7 +209,7 @@ public class KBXHLSpongeStructure
             Vector3d position = player.getPosition().add(offset);
 
             Vector3i positionInt = position.toInt();
-            Direction direction = Direction.getClosest(offset, Direction.Division.CARDINAL);
+            Direction direction = Direction.getClosestHorizontal(offset, Direction.Division.CARDINAL);
             DataContainer data = world.createEntity(EntityTypes.SHULKER, position).createSnapshot().toContainer();
 
             data.set(DataQuery.of("UnsafeData", "NoAI"), (byte) 1);
