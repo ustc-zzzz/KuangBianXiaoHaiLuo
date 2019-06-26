@@ -109,7 +109,7 @@ public class KBXHLSpongeCommand implements Supplier<CommandCallable>
 
     private CommandResult top(CommandSource src, CommandContext args)
     {
-        // TODO
+        src.sendMessage(this.plugin.configuration.toTopRankListText());
         return CommandResult.success();
     }
 
