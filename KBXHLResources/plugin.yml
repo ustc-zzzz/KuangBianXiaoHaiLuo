@@ -1,3 +1,9 @@
 main: io.izzel.kbxhl.KBXHLBukkit
 name: KuangBianXiaoHaiLuo
 version: @version@
+author: IzzelAliz
+
+commands:
+  kbxhl:
+    permission: kbxhl.command
+    description: kbxhl 主命令
