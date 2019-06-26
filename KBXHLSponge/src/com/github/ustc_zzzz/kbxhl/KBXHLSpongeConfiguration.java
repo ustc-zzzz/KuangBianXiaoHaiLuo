@@ -2,6 +2,8 @@ package com.github.ustc_zzzz.kbxhl;
 
 import com.flowpowered.math.vector.Vector3i;
 import com.github.ustc_zzzz.kbxhl.event.KBXHLEvent;
+import com.google.common.base.Strings;
+import com.google.common.collect.Streams;
 import com.google.common.reflect.TypeToken;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
@@ -17,6 +19,7 @@ import org.spongepowered.api.data.persistence.DataFormats;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.golem.Shulker;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.EventManager;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
@@ -35,17 +38,25 @@ import org.spongepowered.api.item.inventory.entity.Hotbar;
 import org.spongepowered.api.item.inventory.entity.PlayerInventory;
 import org.spongepowered.api.item.inventory.property.SlotIndex;
 import org.spongepowered.api.scheduler.Task;
+import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.channel.MessageChannel;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.ToIntFunction;
+import java.util.stream.IntStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * @author ustc_zzzz
@@ -53,6 +64,8 @@ import java.util.function.Consumer;
 @NonnullByDefault
 public class KBXHLSpongeConfiguration
 {
+    private static final int MAX_RANK_SIZE = 10;
+
     private final Logger logger;
     private final KBXHLSponge plugin;
     private final TypeToken<Config> typeToken = TypeToken.of(Config.class);
@@ -73,6 +86,24 @@ public class KBXHLSpongeConfiguration
         this.config = this.getConfig();
         EventManager eventManager = Sponge.getEventManager();
         eventManager.registerListeners(this.plugin, this.new EventListener());
+    }
+
+
+    public Text toTopRankListText()
+    {
+        UserStorageService service = Sponge.getServiceManager().provideUnchecked(UserStorageService.class);
+        int size = Math.min(MAX_RANK_SIZE, config.playerBest.size());
+        List<Text> topRankList = new ArrayList<>();
+        for (int rank = 0; rank < size; ++rank)
+        {
+            UUID uuid = config.playerBest.get(rank);
+            String order = rank <= 1 ? "1st" : rank <= 2 ? "2nd" : rank <= 3 ? "3rd" : rank + "th";
+            String name = Strings.padEnd(service.get(uuid).map(User::getName).orElse("-"), 20, ' ');
+            String time = config.playerFinishTime.getOrDefault(uuid, "         -         ");
+            String score = config.playerDurations.containsKey(uuid) ? String.valueOf(config.playerDurations.get(uuid) / 1e3) : "-";
+            topRankList.add(Text.of(order, "：", name, "于", time, "刷新，共耗时", score, "s"));
+        }
+        return Text.joinWith(Text.NEW_LINE, topRankList);
     }
 
     private Config getConfig()
@@ -113,10 +144,10 @@ public class KBXHLSpongeConfiguration
                 String key = slot.getProperties(SlotIndex.class).iterator().next().toString();
                 slot.poll().ifPresent(item -> data.set(DataQuery.of(key), item));
             }
-            try (ByteArrayOutputStream output = new ByteArrayOutputStream())
+            try (ByteArrayOutputStream o = new ByteArrayOutputStream(); OutputStream output = new GZIPOutputStream(o))
             {
                 DataFormats.NBT.writeTo(output, data);
-                config.playerInventories.put(uuid, encoder.encodeToString(output.toByteArray()));
+                config.playerInventories.put(uuid, encoder.encodeToString(o.toByteArray()));
             }
             catch (IOException e)
             {
@@ -134,7 +165,7 @@ public class KBXHLSpongeConfiguration
         {
             DataContainer data;
             PlayerInventory inventory = (PlayerInventory) player.getInventory();
-            try (ByteArrayInputStream input = new ByteArrayInputStream(decoder.decode(value)))
+            try (InputStream input = new GZIPInputStream(new ByteArrayInputStream(decoder.decode(value))))
             {
                 data = DataFormats.NBT.readFrom(input);
             }
@@ -250,8 +281,41 @@ public class KBXHLSpongeConfiguration
             Duration d = plugin.scoreManager.remove(player);
             if (succeed)
             {
-                int seconds = Math.toIntExact(d.getSeconds()), milliseconds = d.getNano() / 1_000_000;
-                player.sendMessage(Text.of("=> ", String.format("%d.%03d", seconds, milliseconds), " seconds"));
+                UUID uuid = player.getUniqueId();
+                int newDuration = Math.toIntExact(d.toMillis());
+                int oldDuration = config.playerDurations.getOrDefault(uuid, Integer.MAX_VALUE);
+                if (newDuration < oldDuration)
+                {
+                    player.sendMessage(Text.of("狂扁共用时：", newDuration / 1e3, "s", "（个人新记录！）"));
+
+                    config.playerFinishTime.put(uuid, DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now()));
+                    config.playerDurations.put(uuid, newDuration);
+                    config.playerBest.remove(uuid);
+                    config.playerBest.add(uuid);
+
+                    ToIntFunction<UUID> function = k -> config.playerDurations.getOrDefault(k, Integer.MAX_VALUE);
+                    config.playerBest.sort(Comparator.comparingInt(function));
+
+                    int rank = config.playerBest.lastIndexOf(uuid);
+                    if (rank < MAX_RANK_SIZE)
+                    {
+                        config.playerBest.add(rank, uuid);
+                        MessageChannel broadcastChannel = Sponge.getServer().getBroadcastChannel();
+                        String order = rank <= 1 ? "1st" : rank <= 2 ? "2nd" : rank <= 3 ? "3rd" : rank + "th";
+                        broadcastChannel.send(Text.of("来自", player.getName(), "的狂扁小海螺新记录（", order, "）：", newDuration / 1e3, "s"));
+                    }
+
+                    if (config.playerBest.size() > MAX_RANK_SIZE)
+                    {
+                        config.playerBest.subList(MAX_RANK_SIZE, config.playerBest.size()).clear();
+                    }
+
+                    setConfig(config);
+                }
+                else
+                {
+                    player.sendMessage(Text.of("狂扁共用时：", newDuration / 1e3, "s"));
+                }
             }
 
             removeInventory(player);
@@ -270,5 +334,14 @@ public class KBXHLSpongeConfiguration
     {
         @Setting(value = "player-inventories")
         private Map<UUID, String> playerInventories = new TreeMap<>();
+
+        @Setting(value = "player-finish-time")
+        private Map<UUID, String> playerFinishTime = new TreeMap<>();
+
+        @Setting(value = "player-durations")
+        private Map<UUID, Integer> playerDurations = new TreeMap<>();
+
+        @Setting(value = "player-best")
+        private List<UUID> playerBest = new ArrayList<>();
     }
 }

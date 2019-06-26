@@ -1,4 +1,7 @@
 # KuangBianXiaoHaiLuo / 狂扁小海螺
+
+![built-with-love](https://img.shields.io/badge/built%20with-%E2%9D%A4-red.svg) ![github-last-commit](https://img.shields.io/github/last-commit/ustc-zzzz/KuangBianXiaoHaiLuo.svg?color=yellow) ![github-license](https://img.shields.io/github/license/ustc-zzzz/KuangBianXiaoHaiLuo.svg) ![authorized-by-izzel-aliz](https://img.shields.io/badge/officially%20authorized%20by-IzzelAliz-blue.svg)
+
 The Construction Site of Mini Game Plugin KuangBianXiaoHaiLuo / 狂扁小海螺小游戏插件的施工现场
 
 ## 策划
