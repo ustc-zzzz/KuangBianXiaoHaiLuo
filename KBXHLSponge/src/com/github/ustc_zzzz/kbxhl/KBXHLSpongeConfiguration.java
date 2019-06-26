@@ -40,12 +40,12 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * @author ustc_zzzz
@@ -113,10 +113,10 @@ public class KBXHLSpongeConfiguration
                 String key = slot.getProperties(SlotIndex.class).iterator().next().toString();
                 slot.poll().ifPresent(item -> data.set(DataQuery.of(key), item));
             }
-            try (ByteArrayOutputStream output = new ByteArrayOutputStream())
+            try (ByteArrayOutputStream o = new ByteArrayOutputStream(); OutputStream output = new GZIPOutputStream(o))
             {
                 DataFormats.NBT.writeTo(output, data);
-                config.playerInventories.put(uuid, encoder.encodeToString(output.toByteArray()));
+                config.playerInventories.put(uuid, encoder.encodeToString(o.toByteArray()));
             }
             catch (IOException e)
             {
@@ -134,7 +134,7 @@ public class KBXHLSpongeConfiguration
         {
             DataContainer data;
             PlayerInventory inventory = (PlayerInventory) player.getInventory();
-            try (ByteArrayInputStream input = new ByteArrayInputStream(decoder.decode(value)))
+            try (InputStream input = new GZIPInputStream(new ByteArrayInputStream(decoder.decode(value))))
             {
                 data = DataFormats.NBT.readFrom(input);
             }
