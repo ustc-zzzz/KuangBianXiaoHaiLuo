@@ -131,6 +131,10 @@ public class KBXHLGameStructure
         {
             player.sendBlockChange(baseVector.add(offset), this.endBricks);
         }
+        if (this.positionForPurpurBlock.contains(offset))
+        {
+            player.sendBlockChange(baseVector.add(offset), this.purpurBlock);
+        }
         if (this.positionForPurpleGlass.contains(offset))
         {
             player.sendBlockChange(baseVector.add(offset), this.purpleGlass);
@@ -217,7 +221,7 @@ public class KBXHLGameStructure
             };
             Task.builder().delayTicks(duringTicks).execute(executor).submit(this.plugin);
 
-            player.resetBlockChange(shulker.getLocation().getBlockPosition());
+            player.sendBlockChange(shulker.getLocation().getBlockPosition(), this.air);
             shulker.setCreator(player.getUniqueId());
         }
     }
