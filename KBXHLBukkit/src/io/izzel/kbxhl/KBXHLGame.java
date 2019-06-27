@@ -215,7 +215,10 @@ public class KBXHLGame {
         @EventHandler
         public void on(PlayerMoveEvent event) {
             if (event.getPlayer().getUniqueId().equals(player)) {
-                event.setTo(event.getFrom().setDirection(event.getTo().getDirection()));
+                if (event.getFrom().getX() != event.getTo().getX()
+                        || event.getFrom().getY() != event.getTo().getY()
+                        || event.getFrom().getZ() != event.getTo().getZ())
+                    event.setTo(event.getFrom().setDirection(event.getTo().getDirection()));
             }
         }
 
@@ -263,7 +266,7 @@ public class KBXHLGame {
                 base.setZ(base.getBlockZ());
                 val loc = base.clone().add(offset);
                 val angle = player.getEyeLocation().getDirection().angle(loc.clone().subtract(base).toVector());
-                if ((angle / Math.PI) < random.nextDouble()) { // 游戏嘛就是要难一点
+                if ((angle / Math.PI) > random.nextDouble()) { // 游戏嘛就是要难一点
                     player.sendBlockChange(loc, Material.AIR, ((byte) 0));
                     val shulker = player.getWorld().spawn(loc, Shulker.class);
                     shulker.setAI(false);
@@ -278,7 +281,7 @@ public class KBXHLGame {
                         if (shulker.isValid()) {
                             shulker.remove();
                         }
-                        if (players.contains(player.getUniqueId())) {
+                        if (players.contains(GameListener.this.player)) {
                             fix(player, base, offset);
                         }
                     }, tick);
