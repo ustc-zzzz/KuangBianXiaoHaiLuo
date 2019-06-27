@@ -19,14 +19,6 @@ dependencies {
     compile 'org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT'
 }
 
-import org.apache.tools.ant.filters.ReplaceTokens
-
-processResources {
-    from(sourceSets.main.resources.srcDirs) {
-        filter ReplaceTokens, tokens: [version: version]
-    }
-}
-
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
     options.compilerArgs << "-Xlint:all" // << "-Werror"

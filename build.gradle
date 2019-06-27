@@ -1,24 +1,36 @@
-apply plugin: "java"
+plugins {
+    id "org.gradle.java"
+}
 
-version = "1.0.0-SNAPSHOT"
-
-defaultTasks "clean", "build"
-
-jar.enabled = false
+configurations {
+    version = "1.0.0-SNAPSHOT"
+    defaultTasks "clean", "build"
+    archivesBaseName = "KuangBianXiaoHaiLuo"
+}
 
 subprojects {
     version = rootProject.version
     plugins.withId("java") {
+        jar.enabled = false
         buildDir = file("${rootProject.buildDir}/${project.name}")
-        jar.destinationDir = rootProject.jar.destinationDir
+        rootProject.jar.from tasks.withType(JavaCompile)["compileJava"].destinationDir
         sourceSets {
             main.java.srcDir project.file("src/")
-            main.resources.srcDir rootProject.file("KBXHLResources/")
         }
     }
+}
+
+sourceSets {
+    main.resources.srcDir file("KBXHLResources/")
 }
 
 dependencies {
     compile project(":KBXHLBukkit")
     compile project(":KBXHLSponge")
+}
+
+processResources {
+    from sourceSets.main.resources.srcDirs
+    // noinspection UnnecessaryQualifiedReference
+    filter org.apache.tools.ant.filters.ReplaceTokens, tokens: [version: version]
 }
