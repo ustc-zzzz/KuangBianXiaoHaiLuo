@@ -1,9 +1,10 @@
 package io.izzel.kbxhl;
 
-import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import lombok.val;
+import lombok.var;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -15,24 +16,26 @@ import org.bukkit.inventory.ItemStack;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 @Log
 public class KBXHLConfig {
 
     private Path invFile, rankFile;
     private FileConfiguration inv, rank;
-    @Getter private final Set<UUID> players = new HashSet<>();
 
     private transient long top;
 
     @SneakyThrows
     void init(KBXHLBukkit instance) {
         log.info("加载配置");
-        invFile = instance.getDataFolder().toPath().resolve("inv.yml");
+        val folder = instance.getDataFolder().toPath();
+        if (!Files.isDirectory(folder)) Files.createDirectories(folder);
+        invFile = folder.resolve("inv.yml");
         if (!Files.exists(invFile)) Files.createFile(invFile);
         inv = YamlConfiguration.loadConfiguration(Files.newBufferedReader(invFile));
-        rankFile = instance.getDataFolder().toPath().resolve("rank.yml");
+        rankFile = folder.resolve("rank.yml");
         if (!Files.exists(rankFile)) Files.createFile(rankFile);
         rank = YamlConfiguration.loadConfiguration(Files.newBufferedReader(rankFile));
         top = rank.getLong("top", Long.MAX_VALUE);
@@ -87,16 +90,25 @@ public class KBXHLConfig {
 
     private class Listener implements org.bukkit.event.Listener {
 
+        private final ItemStack disabled = new ItemStack(Material.BARRIER, 1);
+        private final ItemStack attack = new ItemStack(Material.STONE_AXE, 1) {{
+            val meta = getItemMeta();
+            meta.setDisplayName("§6§l点击左键狂扁小海螺");
+            setItemMeta(meta);
+        }};
+
         @EventHandler(priority = EventPriority.LOWEST)
         public void on(KBXHLEvent.Start event) {
-            players.add(event.getPlayer().getUniqueId());
             storeInv(event.getPlayer());
             event.getPlayer().getInventory().clear();
+            for (var i = 0; i < 9; i++) {
+                event.getPlayer().getInventory().setItem(i, i == 4 ? attack : disabled);
+            }
+            event.getPlayer().getInventory().setHeldItemSlot(4);
         }
 
         @EventHandler(priority = EventPriority.LOWEST)
         public void on(KBXHLEvent.Stop event) {
-            players.remove(event.getPlayer().getUniqueId());
             loadInv(event.getPlayer());
         }
 

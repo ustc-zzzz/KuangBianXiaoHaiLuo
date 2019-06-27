@@ -1,6 +1,5 @@
 package io.izzel.kbxhl;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.val;
 import org.bukkit.event.EventHandler;
@@ -20,10 +19,10 @@ public final class KBXHLBukkit extends JavaPlugin implements Listener {
         return INSTANCE;
     }
 
-    @Getter private KBXHLConfig config = new KBXHLConfig();
+    @Getter private KBXHLConfig conf = new KBXHLConfig();
     @Getter private KBXHLCommand command = new KBXHLCommand();
     @Getter private KBXHLScoreManager scoreManager = new KBXHLScoreManager();
-    @Getter private KBXHLGame game;
+    @Getter private KBXHLGame game = new KBXHLGame();
 
     @Override
     public void onLoad() {
@@ -33,7 +32,7 @@ public final class KBXHLBukkit extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
-        config.init(this);
+        conf.init(this);
         command.init(this);
         scoreManager.init(this);
         game.init(this);
@@ -41,7 +40,7 @@ public final class KBXHLBukkit extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        config.save();
+        conf.save();
     }
 
     @EventHandler

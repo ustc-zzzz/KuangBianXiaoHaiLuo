@@ -1,22 +1,19 @@
 package io.izzel.kbxhl;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.EventPriority;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.WeakHashMap;
 
 public class KBXHLScoreManager {
@@ -47,6 +44,7 @@ public class KBXHLScoreManager {
             val percent = Math.min(score / MAX, 1.0D);
             bar.setProgress(percent);
             iterator.remove();
+            if (score >= MAX) instance.getServer().getPluginManager().callEvent(new KBXHLEvent.Stop(player));
         }
     }
 
@@ -60,12 +58,14 @@ public class KBXHLScoreManager {
 
     public Duration complete(Player player) {
         try {
-            val start = Instant.ofEpochMilli(player.getMetadata("kbxhl_start").get(0).asLong());
+            val start = player.getMetadata("kbxhl_start").get(0).asLong();
             player.removeMetadata("kbxhl_start", instance);
             scores.remove(player);
             Optional.ofNullable(bossBar.remove(player)).ifPresent(it -> it.removePlayer(player));
             toAdd.remove(player);
-            return Duration.between(start, Instant.now());
+            if (start < System.currentTimeMillis())
+                return Duration.between(Instant.ofEpochMilli(start), Instant.now());
+            else return Duration.ZERO;
         } catch (Exception e) {
             return Duration.ZERO;
         }
@@ -73,45 +73,26 @@ public class KBXHLScoreManager {
 
     private class Listener implements org.bukkit.event.Listener {
 
-        @EventHandler
+        @EventHandler(priority = EventPriority.HIGHEST)
         public void on(KBXHLEvent.Start event) {
             val player = event.getPlayer();
-            player.setMetadata("kbxhl_start", new FixedMetadataValue(instance, System.currentTimeMillis()));
+            player.setMetadata("kbxhl_start", new FixedMetadataValue(instance, System.currentTimeMillis() + 3000));
             val bar = instance.getServer().createBossBar("§6§l狂扁小海螺", BarColor.PURPLE, BarStyle.SOLID);
+            bar.setProgress(0.0d);
             bar.addPlayer(player);
             bossBar.put(player, bar);
-            instance.getServer().getPluginManager().registerEvents(new GameListener(player.getUniqueId()), instance);
         }
 
-        @EventHandler
+        @EventHandler(priority = EventPriority.HIGHEST)
         public void on(KBXHLEvent.Stop event) {
             val player = event.getPlayer();
             val score = score(player);
             val duration = complete(player);
             if (score < MAX) player.sendMessage("未完成游戏");
             else {
-                KBXHLBukkit.instance().getConfig().updateRank(player, duration);
+                KBXHLBukkit.instance().getConf().updateRank(player, duration);
                 int seconds = Math.toIntExact(duration.getSeconds()), milliseconds = duration.getNano() / 1_000_000;
                 player.sendMessage("=> " + String.format("%d.%03d", seconds, milliseconds) + " seconds");
-            }
-        }
-
-    }
-
-    @RequiredArgsConstructor
-    private class GameListener implements org.bukkit.event.Listener {
-        private final UUID player;
-
-        @EventHandler
-        public void on(KBXHLEvent.Stop event) {
-
-        }
-
-        @EventHandler
-        public void on(PlayerQuitEvent event) {
-            if (event.getPlayer().getUniqueId().equals(player)) {
-                instance.getServer().getPluginManager().callEvent(new KBXHLEvent.Stop(event.getPlayer()));
-                HandlerList.unregisterAll(this);
             }
         }
 

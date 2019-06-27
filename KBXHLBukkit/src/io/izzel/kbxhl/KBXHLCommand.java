@@ -24,11 +24,11 @@ public class KBXHLCommand implements CommandExecutor {
         if (!(sender instanceof Player)) return false;
         val player = ((Player) sender);
         val id = player.getUniqueId();
-        if (args.length > 1) {
+        if (args.length >= 1) {
             switch (args[0]) {
                 case "start":
                     if (player.hasPermission("kbxhl.command.start")) {
-                        if (instance.getConfig().getPlayers().contains(id)) {
+                        if (instance.getGame().getPlayers().contains(id)) {
                             player.sendMessage("你已经开始游戏了");
                         } else {
                             Bukkit.getPluginManager().callEvent(new KBXHLEvent.Start(player));
@@ -37,7 +37,7 @@ public class KBXHLCommand implements CommandExecutor {
                     break;
                 case "stop":
                     if (player.hasPermission("kbxhl.command.stop")) {
-                        if (instance.getConfig().getPlayers().contains(id)) {
+                        if (instance.getGame().getPlayers().contains(id)) {
                             Bukkit.getPluginManager().callEvent(new KBXHLEvent.Stop(player));
                         } else {
                             player.sendMessage("你没有在一场游戏中");

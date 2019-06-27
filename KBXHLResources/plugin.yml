@@ -6,4 +6,4 @@ author: IzzelAliz
 commands:
   kbxhl:
     permission: kbxhl.command
-    description: kbxhl 主命令
+    description: kbxhl
