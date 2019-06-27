@@ -38,10 +38,12 @@ public class KBXHLGameStructure
     private final Random random = new Random();
 
     private final KBXHLSponge plugin;
+    private final List<Vector3i> positionForAir;
     private final List<Vector3i> positionForEndBricks;
     private final List<Vector3i> positionForPurpurBlock;
     private final List<Vector3i> positionForPurpleGlass;
 
+    private BlockState air = BlockSnapshot.NONE.getState();
     private BlockState endBricks = BlockSnapshot.NONE.getState();
     private BlockState purpurBlock = BlockSnapshot.NONE.getState();
     private BlockState purpleGlass = BlockSnapshot.NONE.getState();
@@ -50,6 +52,7 @@ public class KBXHLGameStructure
 
     KBXHLGameStructure(KBXHLSponge plugin)
     {
+        ImmutableList.Builder<Vector3i> builderForAir = ImmutableList.builder();
         ImmutableList.Builder<Vector3i> builderForEndBricks = ImmutableList.builder();
         ImmutableList.Builder<Vector3i> builderForPurpurBlock = ImmutableList.builder();
         ImmutableList.Builder<Vector3i> builderForPurpleGlass = ImmutableList.builder();
@@ -78,10 +81,17 @@ public class KBXHLGameStructure
                             builderForEndBricks.add(new Vector3i(i, 2, j));
                         }
                     }
+                    else
+                    {
+                        builderForAir.add(new Vector3i(i, 0, j));
+                        builderForAir.add(new Vector3i(i, 1, j));
+                        builderForAir.add(new Vector3i(i, 2, j));
+                    }
                 }
             }
         }
         this.plugin = plugin;
+        this.positionForAir = builderForAir.build();
         this.positionForEndBricks = builderForEndBricks.build();
         this.positionForPurpurBlock = builderForPurpurBlock.build();
         this.positionForPurpleGlass = builderForPurpleGlass.build();
@@ -113,6 +123,10 @@ public class KBXHLGameStructure
     {
         Vector3i baseVector = player.getPosition().toInt();
 
+        if (this.positionForAir.contains(offset))
+        {
+            player.sendBlockChange(baseVector.add(offset), this.air);
+        }
         if (this.positionForEndBricks.contains(offset))
         {
             player.sendBlockChange(baseVector.add(offset), this.endBricks);
@@ -127,6 +141,10 @@ public class KBXHLGameStructure
     {
         Vector3i baseVector = player.getPosition().toInt();
 
+        for (Vector3i offset : this.positionForAir)
+        {
+            player.resetBlockChange(baseVector.add(offset));
+        }
         for (Vector3i offset : this.positionForEndBricks)
         {
             player.resetBlockChange(baseVector.add(offset));
@@ -155,6 +173,10 @@ public class KBXHLGameStructure
         Vector3i baseVector = location.getBlockPosition();
         ShulkerIterator iterator = new ShulkerIterator(location, this.positionForPurpurBlock);
 
+        for (Vector3i offset : this.positionForAir)
+        {
+            player.sendBlockChange(baseVector.add(offset), this.air);
+        }
         for (Vector3i offset : this.positionForEndBricks)
         {
             player.sendBlockChange(baseVector.add(offset), this.endBricks);

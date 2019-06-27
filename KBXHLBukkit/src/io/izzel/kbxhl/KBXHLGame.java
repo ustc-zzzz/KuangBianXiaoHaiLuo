@@ -30,6 +30,7 @@ public class KBXHLGame {
     @Getter private final Set<UUID> players = new HashSet<>();
     private KBXHLBukkit instance;
 
+    private List<Vector> positionForAir;
     private List<Vector> positionForEndBricks;
     private List<Vector> positionForPurpurBlock;
     private List<Vector> positionForPurpleGlass;
@@ -37,6 +38,7 @@ public class KBXHLGame {
     void init(KBXHLBukkit instance) {
         this.instance = instance;
         instance.getServer().getPluginManager().registerEvents(new Listener(), instance);
+        val builderForAir = ImmutableList.<Vector>builder();
         val builderForEndBricks = ImmutableList.<Vector>builder();
         val builderForPurpurBlock = ImmutableList.<Vector>builder();
         val builderForPurpleGlass = ImmutableList.<Vector>builder();
@@ -57,16 +59,24 @@ public class KBXHLGame {
                             builderForEndBricks.add(new Vector(i, 1, j));
                             builderForEndBricks.add(new Vector(i, 2, j));
                         }
+                    } else {
+                        builderForAir.add(new Vector(i, 0, j));
+                        builderForAir.add(new Vector(i, 1, j));
+                        builderForAir.add(new Vector(i, 2, j));
                     }
                 }
             }
         }
+        this.positionForAir = builderForAir.build();
         this.positionForEndBricks = builderForEndBricks.build();
         this.positionForPurpurBlock = builderForPurpurBlock.build();
         this.positionForPurpleGlass = builderForPurpleGlass.build();
     }
 
     private void fix(Player player, Location base, Vector offset) {
+        if (positionForAir.contains(offset)) {
+            player.sendBlockChange(base.clone().add(offset), Material.AIR, (byte) 0);
+        }
         if (positionForEndBricks.contains(offset)) {
             player.sendBlockChange(base.clone().add(offset), Material.END_BRICKS, (byte) 0);
         }
@@ -83,6 +93,9 @@ public class KBXHLGame {
         location.setX(location.getBlockX());
         location.setY(location.getBlockY());
         location.setZ(location.getBlockZ());
+        for (Vector vector : positionForAir) {
+            player.sendBlockChange(location.clone().add(vector), Material.AIR, (byte) 0);
+        }
         for (Vector vector : positionForEndBricks) {
             player.sendBlockChange(location.clone().add(vector), Material.END_BRICKS, (byte) 0);
         }
@@ -100,6 +113,10 @@ public class KBXHLGame {
         location.setX(location.getBlockX());
         location.setY(location.getBlockY());
         location.setZ(location.getBlockZ());
+        for (Vector vector : positionForAir) {
+            val loc = location.clone().add(vector);
+            player.sendBlockChange(loc, loc.getBlock().getType(), loc.getBlock().getData());
+        }
         for (Vector vector : positionForEndBricks) {
             val loc = location.clone().add(vector);
             player.sendBlockChange(loc, loc.getBlock().getType(), loc.getBlock().getData());
