@@ -1,8 +1,11 @@
-apply plugin: "java"
+plugins {
+    id "org.gradle.java"
+}
 
-sourceCompatibility = 1.8
-
-archivesBaseName = "KuangBianXiaoHaiLuo-Sponge"
+configurations {
+    sourceCompatibility = 1.8
+    archivesBaseName = "KuangBianXiaoHaiLuo-Bukkit"
+}
 
 repositories {
     mavenCentral()

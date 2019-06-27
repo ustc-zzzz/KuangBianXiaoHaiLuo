@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * @author ustc_zzzz
  */
 @NonnullByDefault
-@Plugin(id = "kbxhl", name = "KuangBianXiaoHaiLuo", version = "1.0.0-SNAPSHOT", description = "KuangBianXiaoHaiLuo")
+@Plugin(id = "kbxhl", name = "KuangBianXiaoHaiLuo", version = "@version@", description = "KuangBianXiaoHaiLuo")
 public class KBXHLSponge
 {
     private static final Pattern CHAT_PATTERN_1 = Pattern.compile("\u6d77\u87ba[\uff01\u0021]\u005c\u005c\u0073\u002a");

@@ -13,7 +13,7 @@ subprojects {
     plugins.withId("java") {
         jar.enabled = false
         buildDir = file("${rootProject.buildDir}/${project.name}")
-        rootProject.jar.from tasks.withType(JavaCompile)["compileJava"].destinationDir
+        rootProject.jar.from sourceSets.main.output
         sourceSets {
             main.java.srcDir project.file("src/")
         }
@@ -29,8 +29,9 @@ dependencies {
     compile project(":KBXHLSponge")
 }
 
-processResources {
-    from sourceSets.main.resources.srcDirs
-    // noinspection UnnecessaryQualifiedReference
-    filter org.apache.tools.ant.filters.ReplaceTokens, tokens: [version: version]
+jar {
+    filesNotMatching("**/*.class") {
+        // noinspection UnnecessaryQualifiedReference
+        filter org.apache.tools.ant.filters.ReplaceTokens, tokens: [version: version]
+    }
 }
