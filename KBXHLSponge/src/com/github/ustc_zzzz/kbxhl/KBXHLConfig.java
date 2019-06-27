@@ -3,7 +3,6 @@ package com.github.ustc_zzzz.kbxhl;
 import com.flowpowered.math.vector.Vector3i;
 import com.github.ustc_zzzz.kbxhl.event.KBXHLEvent;
 import com.google.common.base.Strings;
-import com.google.common.collect.Streams;
 import com.google.common.reflect.TypeToken;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
@@ -47,14 +46,11 @@ import org.spongepowered.api.util.annotation.NonnullByDefault;
 
 import java.io.*;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
-import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -62,7 +58,7 @@ import java.util.zip.GZIPOutputStream;
  * @author ustc_zzzz
  */
 @NonnullByDefault
-public class KBXHLSpongeConfiguration
+public class KBXHLConfig
 {
     private static final int MAX_RANK_SIZE = 10;
 
@@ -75,7 +71,7 @@ public class KBXHLSpongeConfiguration
 
     private Config config = new Config();
 
-    KBXHLSpongeConfiguration(KBXHLSponge plugin)
+    KBXHLConfig(KBXHLSponge plugin)
     {
         this.plugin = plugin;
         this.logger = plugin.logger;
@@ -228,7 +224,7 @@ public class KBXHLSpongeConfiguration
             {
                 Player player = (Player) sourceEntity;
                 int score = plugin.structure.scoreFor(player, ((Shulker) targetEntity));
-                if (plugin.scoreManager.add(player, score) >= KBXHLSpongeScoreManager.MAX_SCORE)
+                if (plugin.scoreManager.add(player, score) >= KBXHLScoreManager.MAX_SCORE)
                 {
                     plugin.command.stop(player);
                 }
@@ -256,7 +252,7 @@ public class KBXHLSpongeConfiguration
             hotbar.set(SlotIndex.of(7), disabledItem);
             hotbar.set(SlotIndex.of(8), disabledItem);
 
-            KBXHLSpongeStructure.ShulkerIterator iterator = plugin.structure.constructFor(player);
+            KBXHLGameStructure.ShulkerIterator iterator = plugin.structure.constructFor(player);
 
             Consumer<Task> consumer = task ->
             {
@@ -276,7 +272,7 @@ public class KBXHLSpongeConfiguration
         public void on(KBXHLEvent.Stop event, @Root Player player)
         {
             plugin.structure.destructFor(player);
-            boolean succeed = plugin.scoreManager.add(player, 0) >= KBXHLSpongeScoreManager.MAX_SCORE;
+            boolean succeed = plugin.scoreManager.add(player, 0) >= KBXHLScoreManager.MAX_SCORE;
 
             Duration d = plugin.scoreManager.remove(player);
             if (succeed)

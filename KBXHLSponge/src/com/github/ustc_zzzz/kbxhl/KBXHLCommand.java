@@ -24,12 +24,12 @@ import java.util.function.Supplier;
  * @author ustc_zzzz
  */
 @NonnullByDefault
-public class KBXHLSpongeCommand implements Supplier<CommandCallable>
+public class KBXHLCommand implements Supplier<CommandCallable>
 {
     private final KBXHLSponge plugin;
     private final Set<UUID> players = new LinkedHashSet<>();
 
-    KBXHLSpongeCommand(KBXHLSponge plugin)
+    KBXHLCommand(KBXHLSponge plugin)
     {
         this.plugin = plugin;
     }
@@ -109,18 +109,18 @@ public class KBXHLSpongeCommand implements Supplier<CommandCallable>
 
     private CommandResult top(CommandSource src, CommandContext args)
     {
-        src.sendMessage(this.plugin.configuration.toTopRankListText());
+        src.sendMessage(this.plugin.config.toTopRankListText());
         return CommandResult.success();
     }
 
     private void on(GameStoppingServerEvent event)
     {
-        Sponge.getServer().getOnlinePlayers().forEach(KBXHLSpongeCommand.this::stop);
+        Sponge.getServer().getOnlinePlayers().forEach(KBXHLCommand.this::stop);
     }
 
     private void on(ClientConnectionEvent.Disconnect event)
     {
-        KBXHLSpongeCommand.this.stop(event.getTargetEntity());
+        KBXHLCommand.this.stop(event.getTargetEntity());
     }
 
     @Override

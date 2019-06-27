@@ -31,10 +31,11 @@ public class KBXHLSponge
 
     final Logger logger;
     final ConfigurationLoader<CommentedConfigurationNode> loader;
-    final KBXHLSpongeCommand command = new KBXHLSpongeCommand(this);
-    final KBXHLSpongeStructure structure = new KBXHLSpongeStructure(this);
-    final KBXHLSpongeScoreManager scoreManager = new KBXHLSpongeScoreManager(this);
-    final KBXHLSpongeConfiguration configuration = new KBXHLSpongeConfiguration(this);
+
+    final KBXHLConfig config = new KBXHLConfig(this);
+    final KBXHLCommand command = new KBXHLCommand(this);
+    final KBXHLGameStructure structure = new KBXHLGameStructure(this);
+    final KBXHLScoreManager scoreManager = new KBXHLScoreManager(this);
 
     @Inject
     public KBXHLSponge(Logger logger, @DefaultConfig(sharedRoot = true) ConfigurationLoader<CommentedConfigurationNode> loader)
@@ -46,10 +47,10 @@ public class KBXHLSponge
     @Listener
     public void on(GameStartingServerEvent event)
     {
+        this.config.init();
         this.command.init();
         this.structure.init();
         this.scoreManager.init();
-        this.configuration.init();
     }
 
     @Listener(order = Order.LATE, beforeModifications = true)

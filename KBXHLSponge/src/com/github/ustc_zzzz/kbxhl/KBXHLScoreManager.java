@@ -17,7 +17,7 @@ import java.util.WeakHashMap;
 /**
  * @author ustc_zzzz
  */
-public class KBXHLSpongeScoreManager
+public class KBXHLScoreManager
 {
     static final float MAX_SCORE = 651.0F;
 
@@ -28,7 +28,7 @@ public class KBXHLSpongeScoreManager
     private final Map<Player, ServerBossBar> bossbars = new WeakHashMap<>();
     private final Map<Player, Integer> scoresToBeAdded = new WeakHashMap<>();
 
-    KBXHLSpongeScoreManager(KBXHLSponge plugin)
+    KBXHLScoreManager(KBXHLSponge plugin)
     {
         this.plugin = plugin;
     }

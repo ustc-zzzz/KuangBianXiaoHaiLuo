@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  * @author ustc_zzzz
  */
 @NonnullByDefault
-public class KBXHLSpongeStructure
+public class KBXHLGameStructure
 {
     private final Random random = new Random();
 
@@ -48,7 +48,7 @@ public class KBXHLSpongeStructure
 
     private EnumMap<Direction, Byte> directionMap = new EnumMap<>(Direction.class);
 
-    KBXHLSpongeStructure(KBXHLSponge plugin)
+    KBXHLGameStructure(KBXHLSponge plugin)
     {
         ImmutableList.Builder<Vector3i> builderForEndBricks = ImmutableList.builder();
         ImmutableList.Builder<Vector3i> builderForPurpurBlock = ImmutableList.builder();
