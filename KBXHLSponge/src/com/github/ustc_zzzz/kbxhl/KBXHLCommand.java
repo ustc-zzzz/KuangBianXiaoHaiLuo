@@ -13,10 +13,11 @@ import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.game.state.GameStoppingServerEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -27,7 +28,7 @@ import java.util.function.Supplier;
 public class KBXHLCommand implements Supplier<CommandCallable>
 {
     private final KBXHLSponge plugin;
-    private final Set<UUID> players = new LinkedHashSet<>();
+    private final Map<UUID, Tristate> players = new LinkedHashMap<>();
 
     KBXHLCommand(KBXHLSponge plugin)
     {
@@ -74,13 +75,16 @@ public class KBXHLCommand implements Supplier<CommandCallable>
 
     public boolean start(Player player)
     {
-        if (this.players.add(player.getUniqueId()))
+        UUID uuid = player.getUniqueId();
+        if (!this.players.containsKey(uuid))
         {
+            this.players.put(uuid, Tristate.UNDEFINED);
             try (CauseStackManager.StackFrame frame = Sponge.getCauseStackManager().pushCauseFrame())
             {
                 Cause currentCause = frame.pushCause(player).getCurrentCause();
                 KBXHLEvent.Start e = () -> currentCause;
                 Sponge.getEventManager().post(e);
+                this.players.put(uuid, Tristate.TRUE);
                 return true;
             }
         }
@@ -89,22 +93,25 @@ public class KBXHLCommand implements Supplier<CommandCallable>
 
     public boolean stop(Player player)
     {
-        if (this.players.remove(player.getUniqueId()))
+        UUID uuid = player.getUniqueId();
+        if (this.players.getOrDefault(uuid, Tristate.FALSE).asBoolean())
         {
+            this.players.put(uuid, Tristate.UNDEFINED);
             try (CauseStackManager.StackFrame frame = Sponge.getCauseStackManager().pushCauseFrame())
             {
                 Cause currentCause = frame.pushCause(player).getCurrentCause();
                 KBXHLEvent.Stop e = () -> currentCause;
                 Sponge.getEventManager().post(e);
+                this.players.remove(uuid);
                 return true;
             }
         }
         return false;
     }
 
-    public boolean has(Player player)
+    public Tristate has(Player player)
     {
-        return this.players.contains(player.getUniqueId());
+        return this.players.getOrDefault(player.getUniqueId(), Tristate.FALSE);
     }
 
     private CommandResult top(CommandSource src, CommandContext args)

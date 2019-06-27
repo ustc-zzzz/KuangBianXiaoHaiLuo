@@ -1,5 +1,6 @@
 package com.github.ustc_zzzz.kbxhl;
 
+import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import com.github.ustc_zzzz.kbxhl.event.KBXHLEvent;
 import com.google.common.base.Strings;
@@ -42,7 +43,9 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.channel.MessageChannel;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
+import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
+import org.spongepowered.api.world.Location;
 
 import java.io.*;
 import java.time.Duration;
@@ -140,6 +143,9 @@ public class KBXHLConfig
                 String key = slot.getProperties(SlotIndex.class).iterator().next().toString();
                 slot.poll().ifPresent(item -> data.set(DataQuery.of(key), item));
             }
+            player.get(Keys.IS_FLYING).ifPresent(isFlying -> data.set(Keys.IS_FLYING, isFlying));
+            Vector3d position = player.getPosition();
+            data.set(DataQuery.of("Pos"), position);
             try (ByteArrayOutputStream o = new ByteArrayOutputStream(); OutputStream output = new GZIPOutputStream(o))
             {
                 DataFormats.NBT.writeTo(output, data);
@@ -149,6 +155,8 @@ public class KBXHLConfig
             {
                 logger.error(e.getMessage(), e);
             }
+            player.setLocation(new Location<>(player.getWorld(), position.getX(), 252, position.getZ()));
+            player.offer(Keys.IS_FLYING, Boolean.TRUE);
             setConfig(config);
         }
     }
@@ -170,11 +178,15 @@ public class KBXHLConfig
                 logger.error(e.getMessage(), e);
                 data = DataContainer.createNew(DataView.SafetyMode.NO_DATA_CLONED);
             }
+            Optional<Vector3d> positionOptional = data.getObject(DataQuery.of("Pos"), Vector3d.class);
+            Optional<Boolean> isFlyingOptional = data.getBoolean(Keys.IS_FLYING.getQuery());
             for (Slot slot : inventory.<Slot>slots())
             {
                 String key = slot.getProperties(SlotIndex.class).iterator().next().toString();
                 slot.set(data.getSerializable(DataQuery.of(key), ItemStack.class).orElse(ItemStack.empty()));
             }
+            positionOptional.ifPresent(p -> player.setLocation(new Location<>(player.getWorld(), p)));
+            isFlyingOptional.ifPresent(isFlyingBool -> player.offer(Keys.IS_FLYING, isFlyingBool));
             setConfig(config);
         }
     }
@@ -188,7 +200,7 @@ public class KBXHLConfig
         @Listener
         public void on(AffectSlotEvent event, @First Player player)
         {
-            if (plugin.command.has(player))
+            if (plugin.command.has(player).asBoolean())
             {
                 event.setCancelled(true);
             }
@@ -198,7 +210,7 @@ public class KBXHLConfig
         public void on(MoveEntityEvent event)
         {
             Entity entity = event.getTargetEntity();
-            if (entity instanceof Player && plugin.command.has((Player) entity))
+            if (entity instanceof Player && plugin.command.has((Player) entity).asBoolean())
             {
                 event.setToTransform(event.getToTransform().setLocation(event.getFromTransform().getLocation()));
             }
@@ -207,7 +219,7 @@ public class KBXHLConfig
         @Listener
         public void on(InteractBlockEvent event, @First Player player)
         {
-            if (plugin.command.has(player))
+            if (!Tristate.FALSE.equals(plugin.command.has(player)))
             {
                 event.setCancelled(true);
                 Vector3i offset = event.getTargetBlock().getPosition().sub(player.getPosition().toInt());
@@ -256,7 +268,7 @@ public class KBXHLConfig
 
             Consumer<Task> consumer = task ->
             {
-                if (plugin.command.has(player))
+                if (plugin.command.has(player).asBoolean())
                 {
                     plugin.structure.summonFor(player, iterator);
                 }
