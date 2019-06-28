@@ -73,6 +73,7 @@ public class KBXHLGame {
         this.positionForPurpleGlass = builderForPurpleGlass.build();
     }
 
+    @SuppressWarnings("deprecation")
     private void fix(Player player, Location base, Vector offset) {
         if (positionForAir.contains(offset)) {
             player.sendBlockChange(base.clone().add(offset), Material.AIR, (byte) 0);
@@ -88,6 +89,7 @@ public class KBXHLGame {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void construct(Player player) {
         val location = player.getLocation();
         location.setX(location.getBlockX());
@@ -108,6 +110,7 @@ public class KBXHLGame {
         player.teleport(location.clone().add(0.5, 0, 0.5).setDirection(new Vector()));
     }
 
+    @SuppressWarnings("deprecation")
     private void destruct(Player player) {
         val location = player.getLocation();
         location.setX(location.getBlockX());
@@ -270,6 +273,7 @@ public class KBXHLGame {
                 while (amount-- != 0) spawn();
             }
 
+            @SuppressWarnings("deprecation")
             private void spawn() {
                 if (pointer == seq.size()) {
                     Collections.shuffle(seq, random);
