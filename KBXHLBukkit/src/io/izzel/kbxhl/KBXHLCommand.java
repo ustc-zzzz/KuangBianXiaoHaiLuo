@@ -49,7 +49,7 @@ public class KBXHLCommand implements CommandExecutor {
                     }
                     break;
                 case "top":
-                    if (player.hasPermission("kbxhl.command.start")) {
+                    if (player.hasPermission("kbxhl.command.top")) {
                         instance.getConf().getRank().entrySet()
                                 .stream()
                                 .sorted(Comparator.comparing(Map.Entry::getValue))
