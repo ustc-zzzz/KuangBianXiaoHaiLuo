@@ -52,6 +52,7 @@ public class KBXHLCommand implements CommandExecutor {
                     if (player.hasPermission("kbxhl.command.top")) {
                         instance.getConf().getRank().entrySet()
                                 .stream()
+                                .filter(it -> it.getKey().length() == 36)
                                 .sorted(Comparator.comparing(Map.Entry::getValue))
                                 .limit(10)
                                 .map(entry -> {
