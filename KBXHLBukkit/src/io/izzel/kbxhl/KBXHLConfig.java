@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Log
 public class KBXHLConfig {
@@ -41,6 +42,11 @@ public class KBXHLConfig {
         top = rank.getLong("top", Long.MAX_VALUE);
         instance.getServer().getPluginManager().registerEvents(new Listener(), instance);
         log.info("配置加载完成");
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Long> getRank() {
+        return (Map<String, Long>) (Object) rank.getValues(false);
     }
 
     public void updateRank(Player player, Duration duration) {

@@ -8,6 +8,10 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Comparator;
+import java.util.Map;
+import java.util.UUID;
+
 @Log
 public class KBXHLCommand implements CommandExecutor {
 
@@ -45,6 +49,19 @@ public class KBXHLCommand implements CommandExecutor {
                     }
                     break;
                 case "top":
+                    if (player.hasPermission("kbxhl.command.start")) {
+                        instance.getConf().getRank().entrySet()
+                                .stream()
+                                .sorted(Comparator.comparing(Map.Entry::getValue))
+                                .limit(10)
+                                .map(entry -> {
+                                    val name = instance.getServer().getOfflinePlayer(UUID.fromString(entry.getKey())).getName();
+                                    val time = entry.getValue();
+                                    val sec = time / 1000, mili = time % 1000;
+                                    return String.format("%s 用时 %d.%03d s", name, sec, mili);
+                                })
+                                .forEach(player::sendMessage);
+                    }
                     break;
             }
         }
