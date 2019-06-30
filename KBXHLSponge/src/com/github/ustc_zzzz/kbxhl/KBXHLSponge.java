@@ -1,8 +1,5 @@
 package com.github.ustc_zzzz.kbxhl;
 
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
-import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
-import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.entity.living.player.Player;
@@ -12,6 +9,7 @@ import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.event.message.MessageChannelEvent;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.chat.ChatTypes;
@@ -33,6 +31,7 @@ public class KBXHLSponge
 
     final Logger logger;
     final Path configPath;
+    final PluginContainer pluginContainer;
 
     final KBXHLConfig config;
     final KBXHLCommand command;
@@ -40,10 +39,11 @@ public class KBXHLSponge
     final KBXHLScoreManager scoreManager;
 
     @Inject
-    public KBXHLSponge(Logger logger, @DefaultConfig(sharedRoot = true) Path configPath)
+    public KBXHLSponge(Logger logger, @DefaultConfig(sharedRoot = true) Path configPath, PluginContainer container)
     {
         this.logger = logger;
         this.configPath = configPath;
+        this.pluginContainer = container;
 
         this.config = new KBXHLConfig(this);
         this.command = new KBXHLCommand(this);

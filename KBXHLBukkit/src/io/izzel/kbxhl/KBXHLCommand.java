@@ -37,6 +37,7 @@ public class KBXHLCommand implements CommandExecutor {
                         } else {
                             Bukkit.getPluginManager().callEvent(new KBXHLEvent.Start(player));
                         }
+                        return true;
                     }
                     break;
                 case "stop":
@@ -46,6 +47,7 @@ public class KBXHLCommand implements CommandExecutor {
                         } else {
                             player.sendMessage("你没有在一场游戏中");
                         }
+                        return true;
                     }
                     break;
                 case "top":
@@ -63,10 +65,12 @@ public class KBXHLCommand implements CommandExecutor {
                                     return String.format("%s 用时 %d.%03d s", name, sec, mili);
                                 })
                                 .forEach(player::sendMessage);
+                        return true;
                     }
                     break;
             }
         }
+        player.sendMessage("KuangBianXiaoHaiLuo v" + instance.getDescription().getVersion());
         return true;
     }
 }

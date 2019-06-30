@@ -45,7 +45,7 @@ public class KBXHLCommand implements Supplier<CommandCallable>
     private CommandResult fallback(CommandSource src, CommandContext args)
     {
         // TODO
-        src.sendMessage(Text.of("KuangBianXiaoHaiLuo Help"));
+        src.sendMessage(Text.of("KuangBianXiaoHaiLuo v" + this.plugin.pluginContainer.getVersion().get()));
         return CommandResult.success();
     }
 
