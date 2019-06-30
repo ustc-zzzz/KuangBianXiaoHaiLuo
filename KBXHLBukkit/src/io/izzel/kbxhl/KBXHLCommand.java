@@ -58,7 +58,8 @@ public class KBXHLCommand implements CommandExecutor {
                                 .map(entry -> {
                                     val name = instance.getServer().getOfflinePlayer(UUID.fromString(entry.getKey())).getName();
                                     val time = entry.getValue();
-                                    val sec = time / 1000, mili = time % 1000;
+                                    val mili = time % 1000;
+                                    val sec = time / 1000;
                                     return String.format("%s 用时 %d.%03d s", name, sec, mili);
                                 })
                                 .forEach(player::sendMessage);
