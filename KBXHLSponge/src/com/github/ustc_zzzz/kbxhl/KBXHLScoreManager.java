@@ -6,6 +6,7 @@ import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
+import org.spongepowered.api.util.annotation.NonnullByDefault;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,6 +18,7 @@ import java.util.WeakHashMap;
 /**
  * @author ustc_zzzz
  */
+@NonnullByDefault
 public class KBXHLScoreManager
 {
     static final float MAX_SCORE = 651.0F;

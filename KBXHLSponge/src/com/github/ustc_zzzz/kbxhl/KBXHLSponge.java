@@ -1,6 +1,7 @@
 package com.github.ustc_zzzz.kbxhl;
 
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.spongepowered.api.config.DefaultConfig;
@@ -17,6 +18,7 @@ import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
 import javax.inject.Inject;
+import java.nio.file.Path;
 import java.util.regex.Pattern;
 
 /**
@@ -30,18 +32,23 @@ public class KBXHLSponge
     private static final Pattern CHAT_PATTERN_2 = Pattern.compile("\u571f\u7403[\uff01\u0021]\u005c\u005c\u0073\u002a");
 
     final Logger logger;
-    final ConfigurationLoader<CommentedConfigurationNode> loader;
+    final Path configPath;
 
-    final KBXHLConfig config = new KBXHLConfig(this);
-    final KBXHLCommand command = new KBXHLCommand(this);
-    final KBXHLGameStructure structure = new KBXHLGameStructure(this);
-    final KBXHLScoreManager scoreManager = new KBXHLScoreManager(this);
+    final KBXHLConfig config;
+    final KBXHLCommand command;
+    final KBXHLGameStructure structure;
+    final KBXHLScoreManager scoreManager;
 
     @Inject
-    public KBXHLSponge(Logger logger, @DefaultConfig(sharedRoot = true) ConfigurationLoader<CommentedConfigurationNode> loader)
+    public KBXHLSponge(Logger logger, @DefaultConfig(sharedRoot = true) Path configPath)
     {
         this.logger = logger;
-        this.loader = loader;
+        this.configPath = configPath;
+
+        this.config = new KBXHLConfig(this);
+        this.command = new KBXHLCommand(this);
+        this.structure = new KBXHLGameStructure(this);
+        this.scoreManager = new KBXHLScoreManager(this);
     }
 
     @Listener

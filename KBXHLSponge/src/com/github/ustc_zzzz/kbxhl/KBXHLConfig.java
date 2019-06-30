@@ -6,6 +6,7 @@ import com.github.ustc_zzzz.kbxhl.event.KBXHLEvent;
 import com.google.common.base.Strings;
 import com.google.common.reflect.TypeToken;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.Setting;
 import ninja.leaping.configurate.objectmapping.serialize.ConfigSerializable;
@@ -67,6 +68,7 @@ public class KBXHLConfig
 
     private final Logger logger;
     private final KBXHLSponge plugin;
+    private final HoconConfigurationLoader loader;
     private final TypeToken<Config> typeToken = TypeToken.of(Config.class);
 
     private final Base64.Decoder decoder = Base64.getUrlDecoder();
@@ -78,6 +80,7 @@ public class KBXHLConfig
     {
         this.plugin = plugin;
         this.logger = plugin.logger;
+        this.loader = HoconConfigurationLoader.builder().setPath(plugin.configPath).build();
     }
 
     void init()
@@ -109,7 +112,7 @@ public class KBXHLConfig
     {
         try
         {
-            CommentedConfigurationNode node = this.plugin.loader.load();
+            CommentedConfigurationNode node = this.loader.load();
             return node.<Config>getValue(this.typeToken, Config::new);
         }
         catch (IOException | ObjectMappingException e)
@@ -123,8 +126,8 @@ public class KBXHLConfig
     {
         try
         {
-            CommentedConfigurationNode node = this.plugin.loader.createEmptyNode();
-            this.plugin.loader.save(node.setValue(this.typeToken, config));
+            CommentedConfigurationNode node = this.loader.createEmptyNode();
+            this.loader.save(node.setValue(this.typeToken, config));
         }
         catch (ObjectMappingException | IOException e)
         {
